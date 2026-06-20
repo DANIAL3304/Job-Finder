@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>All Jobs</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="_csrf" th:content="${_csrf.token}" />
+  <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+
+</head>
+
+<style>
+  body {
+    background-color: #f4f6f9;
+    font-family: 'Segoe UI', sans-serif;
+  }
+
+  .navbar {
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  .container {
+    background-color: white;
+    padding: 40px;
+    margin-top: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  }
+
+  table th, table td {
+    vertical-align: middle;
+    text-align: center;
+  }
+
+  thead {
+    background: linear-gradient(to right, #343a40, #6c757d);
+    color: #fff;
+  }
+
+  tbody tr:nth-of-type(odd) {
+    background-color: #f8f9fa;
+  }
+
+  tbody tr:hover {
+    background-color: #e2e6ea;
+    cursor: pointer;
+  }
+
+  /* Slide animations */
+  /* Slide animation */
+  .slide-in {
+    animation: slideIn 0.5s ease forwards;
+  }
+
+
+
+  /* Keyframes */
+  @keyframes slideIn {
+    0% {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+
+</style>
+<canvas id="bubbleCanvas"></canvas>
+
+<style>
+  #bubbleCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: -1; /* Behind everything including navbar */
+    width: 100%;
+    height: 100%;
+  }
+</style>
+
+<script>
+  const canvas = document.getElementById("bubbleCanvas");
+  const ctx = canvas.getContext("2d");
+
+  const NAVBAR_HEIGHT = 80;
+  const NUM_BUBBLES = 15;
+  const bubbles = [];
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  window.addEventListener("resize", resizeCanvas);
+  resizeCanvas();
+
+  class Bubble {
+    constructor() {
+      this.radius = Math.random() * 60 + 30;
+      this.x = Math.random() * (canvas.width - this.radius * 2) + this.radius;
+      this.y = Math.random() * (canvas.height - NAVBAR_HEIGHT - this.radius * 2) + this.radius + NAVBAR_HEIGHT;
+      this.vx = (Math.random() - 0.5) * 2;
+      this.vy = (Math.random() - 0.5) * 2;
+    }
+
+    draw() {
+      const gradient = ctx.createLinearGradient(this.x - this.radius, this.y - this.radius, this.x + this.radius, this.y + this.radius);
+      gradient.addColorStop(0, '#00ffe5');
+      gradient.addColorStop(1, '#ff00e5');
+
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fillStyle = gradient;
+      ctx.globalAlpha = 0.2; // soft transparency
+      ctx.fill();
+      ctx.globalAlpha = 1.0; // reset alpha
+    }
+
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+
+      // Wall collision
+      if (this.x + this.radius > canvas.width || this.x - this.radius < 0) this.vx *= -1;
+      if (this.y + this.radius > canvas.height || this.y - this.radius < NAVBAR_HEIGHT) this.vy *= -1;
+
+      // Smooth bubble collision
+      for (let other of bubbles) {
+        if (other === this) continue;
+        const dx = other.x - this.x;
+        const dy = other.y - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const minDist = this.radius + other.radius;
+
+        if (distance < minDist) {
+          // Calculate angle, sine, cosine
+          const angle = Math.atan2(dy, dx);
+          const sin = Math.sin(angle);
+          const cos = Math.cos(angle);
+
+          // Rotate this bubble's velocity
+          const v1 = { x: this.vx * cos + this.vy * sin, y: this.vy * cos - this.vx * sin };
+          const v2 = { x: other.vx * cos + other.vy * sin, y: other.vy * cos - other.vx * sin };
+
+          // Swap x velocities for 1D elastic collision
+          [v1.x, v2.x] = [v2.x, v1.x];
+
+          // Rotate velocities back
+          this.vx = v1.x * cos - v1.y * sin;
+          this.vy = v1.y * cos + v1.x * sin;
+          other.vx = v2.x * cos - v2.y * sin;
+          other.vy = v2.y * cos + v2.x * sin;
+
+          // Push them apart
+          const overlap = 0.5 * (minDist - distance + 1);
+          const offsetX = overlap * cos;
+          const offsetY = overlap * sin;
+          this.x -= offsetX;
+          this.y -= offsetY;
+          other.x += offsetX;
+          other.y += offsetY;
+        }
+      }
+
+      this.draw();
+    }
+
+  }
+
+  // Generate bubbles
+  for (let i = 0; i < NUM_BUBBLES; i++) {
+    bubbles.push(new Bubble());
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let b of bubbles) {
+      b.update();
+    }
+    requestAnimationFrame(animate);
+  }
+
+  animate();
+</script>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="#">JobFinder</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+            data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+            aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link active" href="/admin">Home</a></li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Menu</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="/admin/job_list_admin">Job</a></li>
+            <li><a class="dropdown-item" href="/admin/company_list_admin">Company</a></li>
+            <li><a class="dropdown-item" href="/admin/user_list_admin">User</a></li>
+          </ul>
+        </li>
+      </ul>
+      <form th:action="@{/logout}" method="post" class="d-flex ms-auto">
+        <button type="submit" class="btn btn-outline-danger">Logout</button>
+      </form>
+    </div>
+  </div>
+</nav>
+
+<!-- Job Table -->
+<div class="container mt-5 slide-in">
+  <h2 class="mb-4">🧾 Job Listings</h2>
+  <table class="table table-striped table-bordered">
+    <thead class="table-dark">
+    <tr>
+      <th>Job Name</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Location</th>
+      <th>Time</th>
+      <th>Salary (MYR)</th>
+      <th>Date</th>
+      <th>Company</th>
+      <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="job : ${jobs}">
+      <td th:text="${job.name}">Job Name</td>
+      <td th:text="${job.description}">Description</td>
+      <td th:text="${job.jobType}">Job Type</td>
+      <td th:text="${job.location}">Location</td>
+      <td th:text="${job.time}">Time</td>
+      <td th:text="${job.salary}">Salary</td>
+      <td th:text="${job.date}">Date</td>
+      <td th:text="${job.company.name}">Company Name</td>
+      <td>
+        <button type="button" class="btn btn-danger btn-sm"
+                th:attr="data-id=${job.jobId}" onclick="handleDelete(this)">
+          Delete
+        </button>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- JavaScript -->
+<script>
+  function handleDelete(button) {
+    const id = button.getAttribute("data-id");
+    const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute("content");
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute("content");
+
+    if (confirm("Are you sure you want to delete this job?")) {
+      fetch(`/admin/api/jobs/${id}`, {
+        method: 'DELETE',
+        headers: {
+          [csrfHeader]: csrfToken
+        }
+      }).then(response => {
+        if (response.ok) {
+          alert("Job deleted successfully.");
+          location.reload();
+        } else {
+          alert("Failed to delete job.");
+        }
+      });
+    }
+  }
+
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

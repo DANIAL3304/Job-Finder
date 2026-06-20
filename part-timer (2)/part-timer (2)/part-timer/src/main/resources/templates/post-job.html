@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Post a Job</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .navbar {
+            background-color: #ffffff;
+        }
+
+        .navbar-brand {
+            font-weight: 600;
+            color: #007bff;
+        }
+
+        .form-container {
+            margin-top: 100px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-outline-danger {
+            margin-left: 10px;
+        }
+    </style>
+    <canvas id="bubbleCanvas"></canvas>
+
+    <style>
+        #bubbleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1; /* Behind everything including navbar */
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+
+    <script>
+        const canvas = document.getElementById("bubbleCanvas");
+        const ctx = canvas.getContext("2d");
+
+        const NAVBAR_HEIGHT = 80;
+        const NUM_BUBBLES = 15;
+        const bubbles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        class Bubble {
+            constructor() {
+                this.radius = Math.random() * 60 + 30;
+                this.x = Math.random() * (canvas.width - this.radius * 2) + this.radius;
+                this.y = Math.random() * (canvas.height - NAVBAR_HEIGHT - this.radius * 2) + this.radius + NAVBAR_HEIGHT;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+            }
+
+            draw() {
+                const gradient = ctx.createLinearGradient(this.x - this.radius, this.y - this.radius, this.x + this.radius, this.y + this.radius);
+                gradient.addColorStop(0, '#00ffe5');
+                gradient.addColorStop(1, '#ff00e5');
+
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.globalAlpha = 0.2; // soft transparency
+                ctx.fill();
+                ctx.globalAlpha = 1.0; // reset alpha
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Wall collision
+                if (this.x + this.radius > canvas.width || this.x - this.radius < 0) this.vx *= -1;
+                if (this.y + this.radius > canvas.height || this.y - this.radius < NAVBAR_HEIGHT) this.vy *= -1;
+
+                // Smooth bubble collision
+                for (let other of bubbles) {
+                    if (other === this) continue;
+                    const dx = other.x - this.x;
+                    const dy = other.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    const minDist = this.radius + other.radius;
+
+                    if (distance < minDist) {
+                        // Calculate angle, sine, cosine
+                        const angle = Math.atan2(dy, dx);
+                        const sin = Math.sin(angle);
+                        const cos = Math.cos(angle);
+
+                        // Rotate this bubble's velocity
+                        const v1 = { x: this.vx * cos + this.vy * sin, y: this.vy * cos - this.vx * sin };
+                        const v2 = { x: other.vx * cos + other.vy * sin, y: other.vy * cos - other.vx * sin };
+
+                        // Swap x velocities for 1D elastic collision
+                        [v1.x, v2.x] = [v2.x, v1.x];
+
+                        // Rotate velocities back
+                        this.vx = v1.x * cos - v1.y * sin;
+                        this.vy = v1.y * cos + v1.x * sin;
+                        other.vx = v2.x * cos - v2.y * sin;
+                        other.vy = v2.y * cos + v2.x * sin;
+
+                        // Push them apart
+                        const overlap = 0.5 * (minDist - distance + 1);
+                        const offsetX = overlap * cos;
+                        const offsetY = overlap * sin;
+                        this.x -= offsetX;
+                        this.y -= offsetY;
+                        other.x += offsetX;
+                        other.y += offsetY;
+                    }
+                }
+
+                this.draw();
+            }
+
+        }
+
+        // Generate bubbles
+        for (let i = 0; i < NUM_BUBBLES; i++) {
+            bubbles.push(new Bubble());
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let b of bubbles) {
+                b.update();
+            }
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</head>
+
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg fixed-top shadow-sm">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand text-black" href="#">JobFinder</a>
+        <div class="collapse navbar-collapse justify-content-end">
+            <ul class="navbar-nav">
+                <li class="nav-item mx-2">
+                    <a class="nav-link" href="/company">Home</a>
+                </li>
+
+                <li class="nav-item mx-2">
+                    <form th:action="@{/logout}" method="post">
+                        <button type="submit" class="btn btn-outline-danger">Logout</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Job Form -->
+<div class="container">
+    <div class="form-container">
+        <h3 class="mb-4">Post a New Job</h3>
+        <form th:action="@{/company/post-job}" th:object="${job}" method="post">
+            <div class="mb-3">
+                <label class="form-label">Job Title</label>
+                <input type="text" class="form-control" th:field="*{name}" placeholder="e.g. Web Developer" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Job Type</label>
+                <select class="form-select" th:field="*{jobType}" required>
+                    <option value="" disabled selected>Choose...</option>
+                    <option value="Full-Time">Full-Time</option>
+                    <option value="Part-Time">Part-Time</option>
+                    <option value="Internship">Internship</option>
+                    <option value="Contract">Contract</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Location</label>
+                <input type="text" class="form-control" th:field="*{location}" placeholder="e.g. Kuala Lumpur" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Time</label>
+                <input type="text" class="form-control" th:field="*{time}" placeholder="e.g. 9am - 5pm" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Salary (RM)</label>
+                <input type="number" step="0.01" class="form-control" th:field="*{salary}" placeholder="e.g. 3000" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Job Description</label>
+                <textarea class="form-control" th:field="*{description}" rows="4" placeholder="Describe the responsibilities, requirements..." required></textarea>
+            </div>
+            <div class="d-flex justify-content-between mt-4">
+                <a href="/company" class="btn btn-secondary">Back to Dashboard</a>
+                <button type="submit" class="btn btn-primary">Post Job</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

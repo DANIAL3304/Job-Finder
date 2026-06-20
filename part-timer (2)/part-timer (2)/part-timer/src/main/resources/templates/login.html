@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>JobFinder</title>
+    <link rel="stylesheet" th:href="@{/css/login.css}">
+    <style>
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            min-width: 100%;
+            min-height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .video-background video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            position: relative;
+            z-index: 1;
+            font-family: Arial, sans-serif;
+        }
+
+        h2 {
+            text-align: center;
+            color: white;
+            margin-top: 20px;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ✅ Background Video -->
+<div class="video-background">
+    <video autoplay muted loop>
+        <source th:src="@{/videos/databaseProject2.mp4}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+</div>
+
+<!-- ✅ Success Alert -->
+<script th:if="${param.registerSuccess}" th:inline="javascript">
+    alert('Registration successful! You can now log in.');
+</script>
+
+<h2>JobFinder</h2>
+
+<div class="container" id="container">
+    <!-- ✅ Register Form -->
+    <div class="form-container sign-up-container">
+        <form id="registerForm" method="post" role="form" th:action="@{/register}">
+            <h1>Create Account</h1>
+            <span>or use your email for registration</span>
+
+            <input type="text" name="username" placeholder="Name" required />
+            <input type="email" name="email" placeholder="Email" required />
+
+            <select class="form-control" name="role" required>
+                <option value="">Select Role</option>
+                <option value="user">User</option>
+                <option value="company">Company</option>
+            </select>
+
+            <input type="password" id="registerPassword" name="password" placeholder="Password" required />
+            <small id="registerPasswordError" style="color:red; display:none;">
+                Password must be at least 6 characters.
+            </small>
+
+            <button type="submit">Register</button>
+        </form>
+    </div>
+
+    <!-- ✅ Login Form -->
+    <div class="form-container sign-in-container">
+        <form method="post" role="form" th:action="@{/login}">
+            <h1>Sign In</h1>
+            <span>or use your account</span>
+            <div th:if="${param.error}" style="color:red;">Invalid email or password</div>
+
+            <input type="email" id="email" name="email" placeholder="Email" required />
+            <input type="password" id="password" name="password" placeholder="Password" required />
+
+            <a href="#">Forgot your password?</a>
+            <button type="submit">Log In</button>
+        </form>
+    </div>
+
+    <!-- ✅ Overlay UI -->
+    <div class="overlay-container">
+        <div class="overlay">
+            <div class="overlay-panel overlay-left">
+                <h1>Welcome Back!</h1>
+                <p>To keep connected with us please login with your personal info</p>
+                <button class="ghost" id="signIn">Log In</button>
+            </div>
+            <div class="overlay-panel overlay-right">
+                <h1>Hello, Friend!</h1>
+                <p>Enter your personal details and start your journey with us</p>
+                <button class="ghost" id="signUp">Register</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/js/login.js}"></script>
+
+<!-- ✅ Password Validation -->
+<script>
+    document.getElementById('registerForm').addEventListener('submit', function (e) {
+        const passwordInput = document.getElementById('registerPassword');
+        const passwordError = document.getElementById('registerPasswordError');
+
+        if (passwordInput.value.length < 6) {
+            e.preventDefault();
+            passwordError.style.display = 'inline';
+            passwordInput.focus();
+        } else {
+            passwordError.style.display = 'none';
+        }
+    });
+</script>
+
+</body>
+</html>
+    

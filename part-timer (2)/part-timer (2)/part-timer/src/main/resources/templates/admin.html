@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="app.js">
+    <title>Library Dashboard</title>
+</head>
+
+
+
+
+<style>
+    /* --------STUDENT DASHBOARD----------- */
+    .nav-link {
+        transition: all 0.3s ease;
+        color: #000; /* default color */
+    }
+
+
+
+
+    .nav-link.active:hover {
+        color: #0d6efd; /* Bootstrap primary blue on hover */
+        transform: scale(1.05); /* optional zoom effect */
+    }
+
+
+
+
+    .nav-link:hover {
+        color: #0d6efd; /* Bootstrap's primary blue */
+        transform: scale(1.05); /* slight zoom effect */
+    }
+
+
+
+
+    .nav-link.dropdown-toggle:hover {
+        color: #0d6efd;
+        transform: scale(1.05);
+    }
+    .container-main{
+        display: flex;
+        justify-content: center;
+        text-align: center;
+    }
+    .container-menu {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1.5rem;
+        margin-top: 2rem;
+        text-align: center;
+    }
+
+
+    .card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+
+    .card:hover {
+        transform: scale(1.05);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        background-color: rgb(181, 181, 181);
+    }
+    #button-1:hover {
+        background-color: #860000; /* Darker shade of Bootstrap primary */
+        transform: scale(1.05);
+        transition: all 0.3s ease;
+    }
+    #button-2:hover {
+        background-color: #00b029; /* Darker shade of Bootstrap primary */
+        transform: scale(1.05);
+        transition: all 0.3s ease;
+    }
+    #button-3:hover {
+        background-color: #f8f05b; /* Darker shade of Bootstrap primary */
+        transform: scale(1.05);
+        transition: all 0.3s ease;
+    }
+
+    /* Slide animation */
+    .slide-in {
+        animation: slideIn 0.5s ease forwards;
+    }
+
+    .slide-out {
+        animation: slideOut 0.4s ease forwards;
+    }
+
+    /* Keyframes */
+    @keyframes slideIn {
+        0% {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes slideOut {
+        0% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        100% {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+    }
+
+
+
+</style>
+<body>
+
+
+<!-- navbar -->
+
+
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="#">JobFinder</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href=#>Home</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Menu
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/admin/job_list_admin">Job</a></li>
+                        <li><a class="dropdown-item" href="/admin/company_list_admin">Company</a></li>
+                        <li><a class="dropdown-item" href="/admin/user_list_admin">User</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <form th:action="@{/logout}" method="post" class="d-flex ms-auto">
+                <button type="submit" class="btn btn-outline-danger">Logout</button>
+            </form>
+
+
+        </div>
+    </div>
+</nav>
+
+
+<canvas id="bubbleCanvas"></canvas>
+
+<style>
+    #bubbleCanvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: -1; /* Behind everything including navbar */
+        width: 100%;
+        height: 100%;
+    }
+</style>
+
+<script>
+    const canvas = document.getElementById("bubbleCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const NAVBAR_HEIGHT = 80;
+    const NUM_BUBBLES = 15;
+    const bubbles = [];
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    class Bubble {
+        constructor() {
+            this.radius = Math.random() * 60 + 30;
+            this.x = Math.random() * (canvas.width - this.radius * 2) + this.radius;
+            this.y = Math.random() * (canvas.height - NAVBAR_HEIGHT - this.radius * 2) + this.radius + NAVBAR_HEIGHT;
+            this.vx = (Math.random() - 0.5) * 2;
+            this.vy = (Math.random() - 0.5) * 2;
+        }
+
+        draw() {
+            const gradient = ctx.createLinearGradient(this.x - this.radius, this.y - this.radius, this.x + this.radius, this.y + this.radius);
+            gradient.addColorStop(0, '#00ffe5');
+            gradient.addColorStop(1, '#ff00e5');
+
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = gradient;
+            ctx.globalAlpha = 0.2; // soft transparency
+            ctx.fill();
+            ctx.globalAlpha = 1.0; // reset alpha
+        }
+
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+
+            // Wall collision
+            if (this.x + this.radius > canvas.width || this.x - this.radius < 0) this.vx *= -1;
+            if (this.y + this.radius > canvas.height || this.y - this.radius < NAVBAR_HEIGHT) this.vy *= -1;
+
+            // Smooth bubble collision
+            for (let other of bubbles) {
+                if (other === this) continue;
+                const dx = other.x - this.x;
+                const dy = other.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const minDist = this.radius + other.radius;
+
+                if (distance < minDist) {
+                    // Calculate angle, sine, cosine
+                    const angle = Math.atan2(dy, dx);
+                    const sin = Math.sin(angle);
+                    const cos = Math.cos(angle);
+
+                    // Rotate this bubble's velocity
+                    const v1 = { x: this.vx * cos + this.vy * sin, y: this.vy * cos - this.vx * sin };
+                    const v2 = { x: other.vx * cos + other.vy * sin, y: other.vy * cos - other.vx * sin };
+
+                    // Swap x velocities for 1D elastic collision
+                    [v1.x, v2.x] = [v2.x, v1.x];
+
+                    // Rotate velocities back
+                    this.vx = v1.x * cos - v1.y * sin;
+                    this.vy = v1.y * cos + v1.x * sin;
+                    other.vx = v2.x * cos - v2.y * sin;
+                    other.vy = v2.y * cos + v2.x * sin;
+
+                    // Push them apart
+                    const overlap = 0.5 * (minDist - distance + 1);
+                    const offsetX = overlap * cos;
+                    const offsetY = overlap * sin;
+                    this.x -= offsetX;
+                    this.y -= offsetY;
+                    other.x += offsetX;
+                    other.y += offsetY;
+                }
+            }
+
+            this.draw();
+        }
+
+    }
+
+    // Generate bubbles
+    for (let i = 0; i < NUM_BUBBLES; i++) {
+        bubbles.push(new Bubble());
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let b of bubbles) {
+            b.update();
+        }
+        requestAnimationFrame(animate);
+    }
+
+    animate();
+</script>
+
+
+
+
+
+
+
+
+<!-- main in dashboard -->
+<div class="container-main mt-5 slide-in">
+    <div>
+        <h4 id="main-header">Welcome, Administrator</h4>
+        <h1 id="main-h1">System Control Panel</h1>
+        <p id="main-p">Manage users, activities, and control system settings all in one place.</p>
+    </div>
+</div>
+
+
+
+
+</div>
+<!-- menu in dashboard  -->
+
+
+
+
+<div class="container-menu">
+
+
+    <div class="container py-5">
+        <div class="row justify-content-center g-4">
+
+            <!-- Job Card -->
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <img src="/assets/jobSearch.png" class="card-img-top img-fluid rounded-top p-3" alt="Job Image" style="height: 200px; object-fit: contain;">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Job</h5>
+                        <p class="card-text">Browse available job listings, including title, description, and company information.</p>
+                        <a href="/admin/job_list_admin" class="btn btn-primary">View Jobs</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Company Card -->
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <img src="/assets/office.png" class="card-img-top img-fluid rounded-top p-3" alt="Company Image" style="height: 200px; object-fit: contain;">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Company</h5>
+                        <p class="card-text">Explore registered companies, their profiles, and the jobs they offer.</p>
+                        <a href="/admin/company_list_admin" class="btn btn-primary">View Companies</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Card -->
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <img src="/assets/profile.png" class="card-img-top img-fluid rounded-top p-3" alt="User Image" style="height: 200px; object-fit: contain;">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">User</h5>
+                        <p class="card-text">Manage user information, view applications, and update personal profiles.</p>
+                        <a href="/admin/user_list_admin" class="btn btn-primary">View Users</a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+
+</div>
+
+
+<!-- Statistics Dashboard Section -->
+<div class="container mt-5 mb-5">
+    <h2 class="text-center mb-4">Dashboard Overview</h2>
+    <div class="row g-4 justify-content-center">
+
+        <!-- Total Users -->
+        <div class="col-md-3">
+            <div class="card text-white bg-primary h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Users</h5>
+                    <p class="card-text display-5" th:text="${userCount}">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Companies -->
+        <div class="col-md-3">
+            <div class="card text-white bg-success h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Companies</h5>
+                    <p class="card-text display-5" th:text="${companyCount}">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Jobs -->
+        <div class="col-md-3">
+            <div class="card text-white bg-warning h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Jobs</h5>
+                    <p class="card-text display-5" th:text="${jobCount}">0</p>
+                </div>
+            </div>
+        </div>
+
+
+
+    </div>
+</div>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+
+</body>
+</html>
